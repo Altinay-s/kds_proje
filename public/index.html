@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="tr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>E-Ticaret Dijital Pazarlama KDS</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body class="bg-light">
+
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary mb-4 p-3">
+        <div class="container-fluid">
+            <a class="navbar-brand fw-bold" href="#">🛒 Pazarlama KDS Dashboard</a>
+        </div>
+    </nav>
+
+    <div class="container mb-5">
+
+        <!-- KPI Özet Kartları -->
+        <div class="row g-4 mb-4">
+            <div class="col-md-3">
+                <div class="card shadow-sm border-0 border-start border-4 border-danger h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="text-muted text-uppercase mb-1">Toplam Harcama</h6>
+                                <h4 class="fw-bold mb-0" id="kpiTotalSpend">₺0.00</h4>
+                            </div>
+                            <div class="fs-1 text-danger">💸</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card shadow-sm border-0 border-start border-4 border-success h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="text-muted text-uppercase mb-1">Toplam Ciro</h6>
+                                <h4 class="fw-bold mb-0" id="kpiTotalRevenue">₺0.00</h4>
+                            </div>
+                            <div class="fs-1 text-success">💰</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card shadow-sm border-0 border-start border-4 border-primary h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="text-muted text-uppercase mb-1">Ortalama ROI</h6>
+                                <h4 class="fw-bold mb-0" id="kpiRoi">%0.0</h4>
+                            </div>
+                            <div class="fs-1 text-primary">📈</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card shadow-sm border-0 border-start border-4 border-warning h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="text-muted text-uppercase mb-1">Aktif Kampanya</h6>
+                                <h4 class="fw-bold mb-0" id="kpiActiveCount">0</h4>
+                            </div>
+                            <div>
+                                <small class="text-muted d-block fw-bold">En İyi: <span
+                                        id="kpiTopChannel">-</span></small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Uyarı Kutusu -->
+        <div id="loss-alert-container" class="mb-4">
+            <!-- JS ile doldurulacak -->
+        </div>
+
+        <!-- Kampanya Karşılaştırma Modülü -->
+        <div class="card shadow-sm mb-4 border-primary">
+            <div class="card-header bg-primary text-white fw-bold d-flex justify-content-between align-items-center">
+                <span>⚡ Senaryo Karşılaştırma Paneli</span>
+                <span class="badge bg-light text-primary">Yeni</span>
+            </div>
+            <div class="card-body">
+                <div class="row g-3 align-items-end">
+                    <div class="col-md-5">
+                        <label for="campaign1" class="form-label fw-bold">Kampanya A Seçin:</label>
+                        <select class="form-select" id="campaign1">
+                            <option selected disabled>Seçiniz...</option>
+                        </select>
+                    </div>
+                    <div class="col-md-5">
+                        <label for="campaign2" class="form-label fw-bold">Kampanya B Seçin:</label>
+                        <select class="form-select" id="campaign2">
+                            <option selected disabled>Seçiniz...</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <button class="btn btn-warning w-100 fw-bold" onclick="compareCampaigns()">Analiz Et 🔍</button>
+                    </div>
+                </div>
+
+                <!-- Karşılaştırma Sonuçları (Default: Hidden) -->
+                <div id="comparisonResults" class="mt-4" style="display: none;">
+                    <hr>
+                    <div class="row g-4">
+                        <!-- Finansal Kıyaslama -->
+                        <div class="col-md-6">
+                            <h6 class="fw-bold text-center">💰 Finansal Kıyaslama</h6>
+                            <div class="chart-container">
+                                <canvas id="compareFinancialChart"></canvas>
+                            </div>
+                        </div>
+                        <!-- Verimlilik Kıyaslama -->
+                        <div class="col-md-6">
+                            <h6 class="fw-bold text-center">🚀 Verimlilik Analizi</h6>
+                            <div class="chart-container">
+                                <canvas id="compareEfficiencyChart"></canvas>
+                            </div>
+                        </div>
+                        <!-- KDS Önerisi -->
+                        <div class="col-12">
+                            <div class="alert alert-info border-info d-flex align-items-center" role="alert">
+                                <div class="fs-2 me-3">💡</div>
+                                <div>
+                                    <h5 class="alert-heading fw-bold">KDS Stratejik Önerisi</h5>
+                                    <p class="mb-0" id="kdsRecommendation">Sonuçlar bekleniyor...</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    </div>
+    </div>
+
+    <!-- Gelecek Simülasyonu Modülü -->
+    <div class="card shadow-sm mb-4 border-success">
+        <div class="card-header bg-success text-white fw-bold d-flex justify-content-between align-items-center">
+            <span>🔮 Gelecek Simülasyonu & Karar Destek</span>
+            <span class="badge bg-light text-success">AI Powered</span>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <!-- Senaryo A -->
+                <div class="col-md-6 border-end">
+                    <h6 class="text-primary fw-bold mb-3">Senaryo A</h6>
+                    <div class="mb-3">
+                        <label class="form-label">Kanal:</label>
+                        <select id="simChannelA" class="form-select sim-channel"></select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Hedef Kitle:</label>
+                        <select id="simAudienceA" class="form-select sim-audience"></select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Bütçe (TL):</label>
+                        <input type="number" id="simBudgetA" class="form-control" value="10000">
+                    </div>
+                </div>
+                <!-- Senaryo B -->
+                <div class="col-md-6">
+                    <h6 class="text-danger fw-bold mb-3">Senaryo B</h6>
+                    <div class="mb-3">
+                        <label class="form-label">Kanal:</label>
+                        <select id="simChannelB" class="form-select sim-channel"></select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Hedef Kitle:</label>
+                        <select id="simAudienceB" class="form-select sim-audience"></select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Bütçe (TL):</label>
+                        <input type="number" id="simBudgetB" class="form-control" value="10000">
+                    </div>
+                </div>
+            </div>
+            <div class="text-center mt-3">
+                <button class="btn btn-lg btn-outline-success fw-bold px-5" onclick="runSimulation()">🚀 SİMÜLE ET VE
+                    KARAR VER</button>
+            </div>
+
+            <!-- Simülasyon Sonuçları -->
+            <div id="simulationResults" class="mt-4" style="display: none;">
+                <hr>
+                <div class="row g-4">
+                    <div class="col-md-6">
+                        <h6 class="text-center fw-bold">Tahmini Gelir (Ciro)</h6>
+                        <div class="chart-container">
+                            <canvas id="simRevenueChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="text-center fw-bold">Tahmini ROI (%)</h6>
+                        <div class="chart-container">
+                            <canvas id="simRoiChart"></canvas>
+                        </div>
+                    </div>
+                    <!-- Karar Kutusu -->
+                    <div class="col-12">
+                        <div class="card bg-success text-white">
+                            <div class="card-body text-center">
+                                <h3 class="card-title fw-bold">🤖 SİSTEM KARARI</h3>
+                                <p class="card-text fs-5" id="simulationDecision">Hesaplanıyor...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+
+        <!-- 1. Kanal Bazlı ROI Analizi (Bar Chart) -->
+        <div class="col-md-6">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-white fw-bold">Kanal Bazlı ROI Analizi (Ciro)</div>
+                <div class="card-body">
+                    <canvas id="roiChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. Hedef Kitle Karşılaştırması (Polar Area Chart) -->
+        <div class="col-md-6">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-white fw-bold">Hedef Kitle Etkileşimi (Tıklama)</div>
+                <div class="card-body">
+                    <canvas id="audienceChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. Harcama vs Ciro Trendi (Line Chart - Çift Eksenli) -->
+        <div class="col-12">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-white fw-bold">Son 30 Gün Harcama vs Ciro Trendi</div>
+                <div class="card-body">
+                    <canvas id="trendChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- 5. Dönüşüm Oranı (Bar/Line Chart) -->
+        <div class="col-md-6">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-white fw-bold">Kampanya Dönüşüm Oranları (%)</div>
+                <div class="card-body">
+                    <canvas id="conversionChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- 6. Materyal Performansı (Pie Chart) -->
+        <div class="col-md-6">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-white fw-bold">Materyal Performansı (Satış Adedi)</div>
+                <div class="card-body">
+                    <canvas id="materialChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- 4. Kampanya Performans Tablosu -->
+        <div class="col-12">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-white fw-bold">Detaylı Kampanya Performans Tablosu</div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Kampanya Başlığı</th>
+                                    <th>Kanal</th>
+                                    <th>Bütçe</th>
+                                    <th>Toplam Harcama</th>
+                                    <th>Kalan Bakiye</th>
+                                    <th>Durum</th>
+                                </tr>
+                            </thead>
+                            <tbody id="campaignTableBody">
+                                <!-- JS ile doldurulacak -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="text-center py-4 text-muted border-top mt-auto">
+        <p class="mb-0">© 2025 E-Ticaret KDS Projesi</p>
+    </footer>
+
+    <!-- JS Dosyası -->
+    <script src="js/dashboard.js"></script>
+</body>
+
+</html>

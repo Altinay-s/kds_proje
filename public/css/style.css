@@ -1,0 +1,37 @@
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f8f9fa;
+}
+
+.card {
+    border: none;
+    border-radius: 10px;
+    transition: transform 0.2s;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+}
+
+.card-header {
+    border-bottom: 1px solid #f0f0f0;
+    font-size: 1.1rem;
+    color: #333;
+    border-radius: 10px 10px 0 0 !important;
+}
+
+.chart-container {
+    position: relative;
+    height: 300px;
+    width: 100%;
+}
+
+canvas {
+    max-height: 400px;
+}
+
+.alert-danger-soft {
+    color: #842029;
+    background-color: #f8d7da;
+    border-color: #f5c2c7;
+}
