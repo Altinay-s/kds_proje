@@ -1,10 +1,10 @@
-const db = require('../config/db');
+const SimulationModel = require('../models/SimulationModel');
 
 // 1. Form Seçeneklerini Getir (Kanallar ve Kitleler)
 exports.getFormOptions = async (req, res) => {
     try {
-        const [channels] = await db.query('SELECT kanal_id, kanal_adi FROM kanallar');
-        const [audiences] = await db.query('SELECT kitle_id, kitle_adi FROM hedef_kitleler');
+        const channels = await SimulationModel.getChannels();
+        const audiences = await SimulationModel.getAudiences();
 
         res.json({ channels, audiences });
     } catch (err) {
@@ -22,82 +22,35 @@ exports.simulateScenario = async (req, res) => {
     }
 
     try {
-        const results = {};
-
         // Helper function to calculate stats for a single scenario
         const calculateStats = async (scenario) => {
             const { kanal_id, kitle_id, butce } = scenario;
 
-            // Verilen Kanal ve Kitleye ait geçmiş verileri çek
-            // Not: Hem kanal hem kitle aynı anda eşleşen kampanya bulamayabiliriz, 
-            // bu yüzden ayrı ayrı ağırlıklı da bakılabilir ama basitlik adına 
-            // o kanaldaki ve o kitledeki ortalamaları ayrı alıp harmanlayacağız.
-            // veya direkt sadece kanala göre CPC, kitleye göre dönüşüm vs. varsayımı yapabiliriz.
-            // Burada kullanıcı isteğine göre: "Seçilen Kanal ve Kitle eşleşmesine ait geçmiş" denmiş.
-            // Ancak veri az ise specific match bulamayabiliriz. 
-            // Mock data'da her kombinasyon yok. 
-            // Çözüm: Genelleştirilmiş bir yaklaşım:
-            // 1. Kanalın ortalama CPC'si
-            // 2. Kitlenin (veya Genel) Dönüşüm Oranı ve Sepet Tutarı
-
             // Kanalın CPC'si
-            const queryCPC = `
-                SELECT 
-                    SUM(gp.gunluk_harcama) as total_spend, 
-                    SUM(gp.tiklama_sayisi) as total_clicks 
-                FROM gunluk_performans gp
-                JOIN kampanyalar k ON gp.kampanya_id = k.kampanya_id
-                WHERE k.kanal_id = ?
-            `;
-            const [rowsCPC] = await db.query(queryCPC, [kanal_id]);
+            const rowCPC = await SimulationModel.getChannelCPC(kanal_id);
             let avgCPC = 0;
-            if (rowsCPC[0].total_clicks > 0) {
-                avgCPC = rowsCPC[0].total_spend / rowsCPC[0].total_clicks;
+            if (rowCPC && rowCPC.total_clicks > 0) {
+                avgCPC = rowCPC.total_spend / rowCPC.total_clicks;
             } else {
                 avgCPC = 5; // Default fallback cost
             }
 
             // Kitle ve Kanalın Ortak Dönüşüm ve Sepet Verisi
-            // Eğer veri yoksa sadece Kanal bazlı bak
-            let querySales = `
-                SELECT 
-                    COUNT(s.satis_id) as total_sales,
-                    SUM(s.satis_tutari) as total_revenue,
-                    (SELECT SUM(gp.tiklama_sayisi) 
-                     FROM gunluk_performans gp 
-                     JOIN kampanyalar k ON gp.kampanya_id = k.kampanya_id 
-                     WHERE k.kanal_id = ? AND k.kitle_id = ?) as total_clicks_context
-                FROM satislar s
-                JOIN kampanyalar k ON s.kampanya_id = k.kampanya_id
-                WHERE k.kanal_id = ? AND k.kitle_id = ?
-            `;
-            let [rowsSales] = await db.query(querySales, [kanal_id, kitle_id, kanal_id, kitle_id]);
+            let rowSales = await SimulationModel.getSalesMetrics(kanal_id, kitle_id);
 
-            // Eğer spesifik eşleşme yoksa (NULL ise), sadece kanala göre bak
-            if (!rowsSales[0].total_clicks_context) {
-                querySales = `
-                    SELECT 
-                        COUNT(s.satis_id) as total_sales,
-                        SUM(s.satis_tutari) as total_revenue,
-                        (SELECT SUM(gp.tiklama_sayisi) 
-                         FROM gunluk_performans gp 
-                         JOIN kampanyalar k ON gp.kampanya_id = k.kampanya_id 
-                         WHERE k.kanal_id = ?) as total_clicks_context
-                    FROM satislar s
-                    JOIN kampanyalar k ON s.kampanya_id = k.kampanya_id
-                    WHERE k.kanal_id = ?
-                `;
-                [rowsSales] = await db.query(querySales, [kanal_id, kanal_id]);
+            // Eğer spesifik eşleşme yoksa (NULL ise veya click yoksa), sadece kanala göre bak
+            if (!rowSales || !rowSales.total_clicks_context) {
+                rowSales = await SimulationModel.getSalesMetricsByChannel(kanal_id);
             }
 
-            const total_sales = rowsSales[0].total_sales || 0;
-            const total_revenue = rowsSales[0].total_revenue || 0;
-            const total_clicks = rowsSales[0].total_clicks_context || 1; // avoid div by zero
+            const total_sales = rowSales ? rowSales.total_sales : 0;
+            const total_revenue = rowSales ? rowSales.total_revenue : 0;
+            const total_clicks = (rowSales && rowSales.total_clicks_context) ? rowSales.total_clicks_context : 1;
 
             let cvr = total_clicks > 0 ? total_sales / total_clicks : 0.02; // Default %2
             let aov = total_sales > 0 ? total_revenue / total_sales : 100; // Default 100 TL
 
-            // Eğer veri çok azsa mantıklı sınırlar koy (Mock data sorunu olmaması için)
+            // Eğer veri çok azsa mantıklı sınırlar koy
             if (cvr === 0) cvr = 0.015;
             if (aov === 0) aov = 150;
 
@@ -142,3 +95,4 @@ exports.simulateScenario = async (req, res) => {
         res.status(500).send('Server Error');
     }
 };
+
